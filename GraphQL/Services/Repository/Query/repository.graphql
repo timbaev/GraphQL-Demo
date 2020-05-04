@@ -1,0 +1,26 @@
+query SearchRepositories($searchText: String!) {
+    search(first: 20, query: $searchText, type: REPOSITORY) {
+        nodes {
+            ... on Repository {
+                ... RepositorySearchResult
+            }
+        }
+    }
+}
+
+fragment RepositorySearchResult on Repository {
+    id
+    owner {
+        avatarUrl
+        login
+    }
+    name
+    description
+    primaryLanguage {
+        color
+        name
+    }
+    stargazers {
+        totalCount
+    }
+}
