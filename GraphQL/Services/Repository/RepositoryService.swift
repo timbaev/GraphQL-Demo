@@ -14,4 +14,5 @@ protocol RepositoryService {
     // MARK: - Instance Methods
 
     func search(with searchText: String) -> Promise<[RepositorySearchResult]>
+    func fetchRepository(with name: String, owner: String) -> Promise<Repository>
 }

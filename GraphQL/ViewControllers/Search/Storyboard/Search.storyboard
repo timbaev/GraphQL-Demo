@@ -142,11 +142,22 @@
                     <connections>
                         <outlet property="activityIndicator" destination="YIk-Bl-cbw" id="5QP-GX-P0V"/>
                         <outlet property="tableView" destination="PMp-bb-kwR" id="3IF-m2-Lxt"/>
+                        <segue destination="8t2-ID-AcY" kind="show" identifier="ShowRepository" id="kAN-tr-0Bb"/>
                     </connections>
                 </viewController>
                 <placeholder placeholderIdentifier="IBFirstResponder" id="az8-nN-r7X" userLabel="First Responder" customClass="UIResponder" sceneMemberID="firstResponder"/>
             </objects>
             <point key="canvasLocation" x="939.13043478260875" y="101.78571428571428"/>
+        </scene>
+        <!--Repository-->
+        <scene sceneID="KRg-Gt-gTx">
+            <objects>
+                <viewControllerPlaceholder storyboardName="Repository" id="8t2-ID-AcY" sceneMemberID="viewController">
+                    <navigationItem key="navigationItem" id="Jbz-Gf-t0t"/>
+                </viewControllerPlaceholder>
+                <placeholder placeholderIdentifier="IBFirstResponder" id="j5T-Ja-jcv" userLabel="First Responder" customClass="UIResponder" sceneMemberID="firstResponder"/>
+            </objects>
+            <point key="canvasLocation" x="1542" y="102"/>
         </scene>
         <!--Navigation Controller-->
         <scene sceneID="s42-K0-QdJ">

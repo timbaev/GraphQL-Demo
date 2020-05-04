@@ -8,6 +8,36 @@ query SearchRepositories($searchText: String!) {
     }
 }
 
+query FetchRepository($name: String!, $owner: String!) {
+    repository(name: $name, owner: $owner) {
+        id
+        owner {
+            avatarUrl
+            login
+        }
+        name
+        description
+        stargazers {
+            totalCount
+        }
+        forkCount
+        viewerHasStarred
+        viewerSubscription
+        issues {
+            totalCount
+        }
+        pullRequests {
+            totalCount
+        }
+        watchers {
+            totalCount
+        }
+        licenseInfo {
+            name
+        }
+    }
+}
+
 fragment RepositorySearchResult on Repository {
     id
     owner {

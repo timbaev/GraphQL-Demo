@@ -22,31 +22,47 @@ struct DefaultRepositoryService: RepositoryService {
         let query = SearchRepositoriesQuery(searchText: searchText)
 
         return Promise(resolver: { seal in
-            self.webClient.fetch(
-                query: query,
-                cachePolicy: .returnCacheDataAndFetch,
-                resultHandler: { result in
-                    switch result {
-                    case .success(let graphQLResult):
-                        guard let data = graphQLResult.data, let nodes = data.search.nodes else {
-                            return seal.reject(WebError.badResponse)
-                        }
-
-                        let searchResults: [RepositorySearchResult] = nodes.compactMap { node in
-                            guard let asRepository = node?.asRepository else {
-                                return nil
-                            }
-
-                            return asRepository.fragments.repositorySearchResult
-                        }
-
-                        return seal.fulfill(searchResults)
-
-                    case .failure(let error):
-                        seal.reject(error)
+            self.webClient.fetch(query: query, cachePolicy: .returnCacheDataAndFetch, resultHandler: { result in
+                switch result {
+                case .success(let graphQLResult):
+                    guard let data = graphQLResult.data, let nodes = data.search.nodes else {
+                        return seal.reject(WebError.badResponse)
                     }
+
+                    let searchResults: [RepositorySearchResult] = nodes.compactMap { node in
+                        guard let asRepository = node?.asRepository else {
+                            return nil
+                        }
+
+                        return asRepository.fragments.repositorySearchResult
+                    }
+
+                    return seal.fulfill(searchResults)
+
+                case .failure(let error):
+                    seal.reject(error)
                 }
-            )
+            })
+        })
+    }
+
+    func fetchRepository(with name: String, owner: String) -> Promise<Repository> {
+        let query = FetchRepositoryQuery(name: name, owner: owner)
+
+        return Promise(resolver: { seal in
+            self.webClient.fetch(query: query, cachePolicy: .returnCacheDataAndFetch, resultHandler: { result in
+                switch result {
+                case .success(let graphQLResult):
+                    guard let data = graphQLResult.data, let repository = data.repository else {
+                        return seal.reject(WebError.badResponse)
+                    }
+
+                    seal.fulfill(repository)
+
+                case .failure(let error):
+                    seal.reject(error)
+                }
+            })
         })
     }
 }

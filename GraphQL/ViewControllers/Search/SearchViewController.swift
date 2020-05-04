@@ -11,6 +11,15 @@ import PromiseKit
 
 class SearchViewController: LoggedViewController, EmptyStateViewable {
 
+    // MARK: - Nested Types
+
+    private enum Segues {
+
+        // MARK: - Type Properties
+
+        static let showRepository = "ShowRepository"
+    }
+
     // MARK: - Instance Properties
 
     @IBOutlet private weak var tableView: UITableView!
@@ -19,7 +28,7 @@ class SearchViewController: LoggedViewController, EmptyStateViewable {
 
     // MARK: -
 
-    private let throttler = Throttler(minimumDelay: 0.25)
+    private let throttler = Throttler(minimumDelay: 1.5)
     private var searchResults: [RepositorySearchResult] = []
 
     // MARK: -
@@ -121,6 +130,26 @@ class SearchViewController: LoggedViewController, EmptyStateViewable {
 
         self.configureSearchBar()
     }
+
+    override func prepare(for segue: UIStoryboardSegue, sender: Any?) {
+        super.prepare(for: segue, sender: sender)
+
+        switch segue.identifier {
+        case Segues.showRepository:
+            guard let dataInput = segue.destination as? RepositoryDataInput else {
+                fatalError("Unexpected data input")
+            }
+
+            guard let searchResult = sender as? RepositorySearchResult else {
+                fatalError("Unexpected sender type")
+            }
+
+            dataInput.apply(searchResult: searchResult)
+
+        default:
+            break
+        }
+    }
 }
 
 // MARK: - UISearchResultsUpdating
@@ -178,6 +207,8 @@ extension SearchViewController: UITableViewDelegate {
 
     func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
         tableView.deselectRow(at: indexPath, animated: true)
+
+        self.performSegue(withIdentifier: Segues.showRepository, sender: self.searchResults[indexPath.row])
     }
 
     func tableView(_ tableView: UITableView, willDisplay cell: UITableViewCell, forRowAt indexPath: IndexPath) {
