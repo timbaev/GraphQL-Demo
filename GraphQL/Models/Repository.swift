@@ -8,4 +8,4 @@
 
 import Foundation
 
-typealias Repository = FetchRepositoryQuery.Data.Repository
+typealias Repository = RepositoryDetailsFields

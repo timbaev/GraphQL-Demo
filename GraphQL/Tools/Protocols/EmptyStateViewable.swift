@@ -110,7 +110,7 @@ extension EmptyStateViewable where Self: UIViewController {
         self.showEmptyState(
             image: Images.somethingWrongIcon,
             title: "Something went wrong",
-            message: "Unexpected error occurred in GraphQL application",
+            message: "Please let us know what went wrong or try again later.",
             action: emptyStateAction
         )
     }

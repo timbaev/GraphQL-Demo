@@ -50,10 +50,62 @@ struct DefaultRepositoryService: RepositoryService {
         let query = FetchRepositoryQuery(name: name, owner: owner)
 
         return Promise(resolver: { seal in
-            self.webClient.fetch(query: query, cachePolicy: .returnCacheDataAndFetch, resultHandler: { result in
+            self.webClient.fetch(query: query, cachePolicy: .fetchIgnoringCacheData, resultHandler: { result in
                 switch result {
                 case .success(let graphQLResult):
-                    guard let data = graphQLResult.data, let repository = data.repository else {
+                    guard let data = graphQLResult.data else {
+                        return seal.reject(WebError.badResponse)
+                    }
+
+                    guard let repository = data.repository?.fragments.repositoryDetailsFields else {
+                        return seal.reject(WebError.badResponse)
+                    }
+
+                    seal.fulfill(repository)
+
+                case .failure(let error):
+                    seal.reject(error)
+                }
+            })
+        })
+    }
+
+    func addStar(to repositoryID: String) -> Promise<Repository> {
+        let mutation = AddStarMutation(starrableID: repositoryID)
+
+        return Promise(resolver: { seal in
+            self.webClient.perform(mutation: mutation, resultHandler: { result in
+                switch result {
+                case .success(let graphQLResult):
+                    guard let data = graphQLResult.data else {
+                        return seal.reject(WebError.badResponse)
+                    }
+
+                    guard let repository = data.addStar?.starrable?.asRepository?.fragments.repositoryDetailsFields else {
+                        return seal.reject(WebError.badResponse)
+                    }
+
+                    seal.fulfill(repository)
+
+                case .failure(let error):
+                    seal.reject(error)
+                }
+            })
+        })
+    }
+
+    func removeStar(from repositoryID: String) -> Promise<Repository> {
+        let mutation = RemoveStarMutation(starrableID: repositoryID)
+
+        return Promise(resolver: { seal in
+            self.webClient.perform(mutation: mutation, resultHandler: { result in
+                switch result {
+                case .success(let graphQLResult):
+                    guard let data = graphQLResult.data else {
+                        return seal.reject(WebError.badResponse)
+                    }
+
+                    guard let repository = data.removeStar?.starrable?.asRepository?.fragments.repositoryDetailsFields else {
                         return seal.reject(WebError.badResponse)
                     }
 

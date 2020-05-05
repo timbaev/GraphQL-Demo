@@ -9,7 +9,7 @@
 import UIKit
 import PromiseKit
 
-final class RepositoryViewController: LoggedViewController, EmptyStateViewable {
+final class RepositoryViewController: LoggedViewController, EmptyStateViewable, ErrorMessageViewable {
 
     // MARK: - Instance Properties
 
@@ -30,6 +30,7 @@ final class RepositoryViewController: LoggedViewController, EmptyStateViewable {
     // MARK: -
 
     private var searchResult: RepositorySearchResult?
+    private var repository: Repository?
 
     private var info: [RepositoryInfo] = []
 
@@ -41,6 +42,16 @@ final class RepositoryViewController: LoggedViewController, EmptyStateViewable {
 
     @IBAction private func onStarButtonTouchUpInside(_ sender: Button) {
         Log.high("onStarButtonTouchUpInside()", from: self)
+
+        guard let repository = self.repository else {
+            return
+        }
+
+        if repository.viewerHasStarred {
+            self.removeStar(from: repository.id)
+        } else {
+            self.addStar(to: repository.id)
+        }
     }
 
     @IBAction private func onWatchButtonTouchUpInside(_ sender: Button) {
@@ -78,6 +89,26 @@ final class RepositoryViewController: LoggedViewController, EmptyStateViewable {
         }
     }
 
+    private func addStar(to repositoryID: String) {
+        firstly {
+            Dependencies.repositoryService.addStar(to: repositoryID)
+        }.done { repository in
+            self.apply(repository: repository)
+        }.catch { error in
+            self.showMessage(withError: error)
+        }
+    }
+
+    private func removeStar(from repositoryID: String) {
+        firstly {
+            Dependencies.repositoryService.removeStar(from: repositoryID)
+        }.done { repository in
+            self.apply(repository: repository)
+        }.catch { error in
+            self.showMessage(withError: error)
+        }
+    }
+
     // MARK: -
 
     private func showLoadingState() {
@@ -93,6 +124,8 @@ final class RepositoryViewController: LoggedViewController, EmptyStateViewable {
 
     private func apply(repository: Repository) {
         Log.high("apply(repository: \(repository.name))")
+
+        self.repository = repository
 
         if let url = URL(string: repository.owner.avatarUrl) {
             Dependencies.imageLoader.loadImage(for: url, in: self.ownerAvatarImageView)
@@ -156,6 +189,21 @@ final class RepositoryViewController: LoggedViewController, EmptyStateViewable {
 
     private func handle(stateError error: Error) {
         Log.high("handle(stateError: \(error))", from: self)
+
+        switch error as? WebError {
+        case .some(.connection), .some(.timeOut):
+            self.showInternetDisconnectionState()
+
+        case .some(let webError) where webError.detailDescription != nil:
+            self.showErrorState(message: webError.detailDescription!)
+
+        default:
+            self.showErrorState()
+        }
+    }
+
+    private func handle(error: Error) {
+        Log.high("handle(error: \(error))", from: self)
 
         switch error as? WebError {
         case .some(.connection), .some(.timeOut):

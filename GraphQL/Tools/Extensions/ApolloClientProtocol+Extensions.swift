@@ -32,4 +32,22 @@ extension ApolloClientProtocol {
     ) -> Cancellable {
         self.fetch(query: query, cachePolicy: cachePolicy, context: context, queue: queue, resultHandler: resultHandler)
     }
+
+    /// Performs a mutation by sending it to the server.
+    ///
+    /// - Parameters:
+    ///   - mutation: The mutation to perform.
+    ///   - context: [optional] A context to use for the cache to work with results. Should default to nil.
+    ///   - queue: A dispatch queue on which the result handler will be called. Defaults to the main queue.
+    ///   - resultHandler: An optional closure that is called when mutation results are available or when an error occurs.
+    /// - Returns: An object that can be used to cancel an in progress mutation.
+    @discardableResult
+    func perform<Mutation: GraphQLMutation>(
+        mutation: Mutation,
+        context: UnsafeMutableRawPointer? = nil,
+        queue: DispatchQueue = DispatchQueue.main,
+        resultHandler: GraphQLResultHandler<Mutation.Data>? = nil
+    ) -> Cancellable {
+        self.perform(mutation: mutation, context: context, queue: queue, resultHandler: resultHandler)
+    }
 }

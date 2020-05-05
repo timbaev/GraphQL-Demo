@@ -57,6 +57,7 @@
 		CB82E56B2460850900CBA972 /* RepositoryInfo.swift in Sources */ = {isa = PBXBuildFile; fileRef = CB82E56A2460850900CBA972 /* RepositoryInfo.swift */; };
 		CB82E5712460871C00CBA972 /* RepositoryDataInput.swift in Sources */ = {isa = PBXBuildFile; fileRef = CB82E5702460871C00CBA972 /* RepositoryDataInput.swift */; };
 		CB82E57324608AF200CBA972 /* UITableView+Extensions.swift in Sources */ = {isa = PBXBuildFile; fileRef = CB82E57224608AF200CBA972 /* UITableView+Extensions.swift */; };
+		CBC7AF582461402F00D1AD5C /* ErrorMessageViewable.swift in Sources */ = {isa = PBXBuildFile; fileRef = CBC7AF572461402F00D1AD5C /* ErrorMessageViewable.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -108,6 +109,7 @@
 		CB82E56A2460850900CBA972 /* RepositoryInfo.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RepositoryInfo.swift; sourceTree = "<group>"; };
 		CB82E5702460871C00CBA972 /* RepositoryDataInput.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RepositoryDataInput.swift; sourceTree = "<group>"; };
 		CB82E57224608AF200CBA972 /* UITableView+Extensions.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "UITableView+Extensions.swift"; sourceTree = "<group>"; };
+		CBC7AF572461402F00D1AD5C /* ErrorMessageViewable.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ErrorMessageViewable.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -167,6 +169,7 @@
 			isa = PBXGroup;
 			children = (
 				CB064AA1246001A9005A033D /* EmptyStateViewable.swift */,
+				CBC7AF572461402F00D1AD5C /* ErrorMessageViewable.swift */,
 			);
 			path = Protocols;
 			sourceTree = "<group>";
@@ -548,6 +551,7 @@
 				CB064A7B245FE68A005A033D /* StringInterpolation+Extensions.swift in Sources */,
 				CB82E57324608AF200CBA972 /* UITableView+Extensions.swift in Sources */,
 				CB114BB9245F0AAB008EE758 /* DateFormatter+Extensions.swift in Sources */,
+				CBC7AF582461402F00D1AD5C /* ErrorMessageViewable.swift in Sources */,
 				CB064AA2246001A9005A033D /* EmptyStateViewable.swift in Sources */,
 				CB82E5632460772D00CBA972 /* API.swift in Sources */,
 				CB82E5662460783800CBA972 /* Repository.swift in Sources */,

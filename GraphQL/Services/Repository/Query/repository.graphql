@@ -10,30 +10,30 @@ query SearchRepositories($searchText: String!) {
 
 query FetchRepository($name: String!, $owner: String!) {
     repository(name: $name, owner: $owner) {
-        id
-        owner {
-            avatarUrl
-            login
+        ... RepositoryDetailsFields
+    }
+}
+
+mutation AddStar($starrableID: String!) {
+    addStar(input: {
+        starrableId: $starrableID
+    }) {
+        starrable {
+            ... on Repository {
+                ... RepositoryDetailsFields
+            }
         }
-        name
-        description
-        stargazers {
-            totalCount
-        }
-        forkCount
-        viewerHasStarred
-        viewerSubscription
-        issues {
-            totalCount
-        }
-        pullRequests {
-            totalCount
-        }
-        watchers {
-            totalCount
-        }
-        licenseInfo {
-            name
+    }
+}
+
+mutation RemoveStar($starrableID: String!) {
+    removeStar(input: {
+        starrableId: $starrableID
+    }) {
+        starrable {
+            ... on Repository {
+                ... RepositoryDetailsFields
+            }
         }
     }
 }
@@ -52,5 +52,33 @@ fragment RepositorySearchResult on Repository {
     }
     stargazers {
         totalCount
+    }
+}
+
+fragment RepositoryDetailsFields on Repository {
+    id
+    owner {
+        avatarUrl
+        login
+    }
+    name
+    description
+    stargazers {
+        totalCount
+    }
+    forkCount
+    viewerHasStarred
+    viewerSubscription
+    issues {
+        totalCount
+    }
+    pullRequests {
+        totalCount
+    }
+    watchers {
+        totalCount
+    }
+    licenseInfo {
+        name
     }
 }

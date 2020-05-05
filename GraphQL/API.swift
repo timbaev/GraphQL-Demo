@@ -271,42 +271,14 @@ public final class FetchRepositoryQuery: GraphQLQuery {
     query FetchRepository($name: String!, $owner: String!) {
       repository(name: $name, owner: $owner) {
         __typename
-        id
-        owner {
-          __typename
-          avatarUrl
-          login
-        }
-        name
-        description
-        stargazers {
-          __typename
-          totalCount
-        }
-        forkCount
-        viewerHasStarred
-        viewerSubscription
-        issues {
-          __typename
-          totalCount
-        }
-        pullRequests {
-          __typename
-          totalCount
-        }
-        watchers {
-          __typename
-          totalCount
-        }
-        licenseInfo {
-          __typename
-          name
-        }
+        ...RepositoryDetailsFields
       }
     }
     """
 
   public let operationName: String = "FetchRepository"
+
+  public var queryDocument: String { return operationDefinition.appending(RepositoryDetailsFields.fragmentDefinition) }
 
   public var name: String
   public var owner: String
@@ -352,28 +324,13 @@ public final class FetchRepositoryQuery: GraphQLQuery {
 
       public static let selections: [GraphQLSelection] = [
         GraphQLField("__typename", type: .nonNull(.scalar(String.self))),
-        GraphQLField("id", type: .nonNull(.scalar(GraphQLID.self))),
-        GraphQLField("owner", type: .nonNull(.object(Owner.selections))),
-        GraphQLField("name", type: .nonNull(.scalar(String.self))),
-        GraphQLField("description", type: .scalar(String.self)),
-        GraphQLField("stargazers", type: .nonNull(.object(Stargazer.selections))),
-        GraphQLField("forkCount", type: .nonNull(.scalar(Int.self))),
-        GraphQLField("viewerHasStarred", type: .nonNull(.scalar(Bool.self))),
-        GraphQLField("viewerSubscription", type: .scalar(SubscriptionState.self)),
-        GraphQLField("issues", type: .nonNull(.object(Issue.selections))),
-        GraphQLField("pullRequests", type: .nonNull(.object(PullRequest.selections))),
-        GraphQLField("watchers", type: .nonNull(.object(Watcher.selections))),
-        GraphQLField("licenseInfo", type: .object(LicenseInfo.selections)),
+        GraphQLFragmentSpread(RepositoryDetailsFields.self),
       ]
 
       public private(set) var resultMap: ResultMap
 
       public init(unsafeResultMap: ResultMap) {
         self.resultMap = unsafeResultMap
-      }
-
-      public init(id: GraphQLID, owner: Owner, name: String, description: String? = nil, stargazers: Stargazer, forkCount: Int, viewerHasStarred: Bool, viewerSubscription: SubscriptionState? = nil, issues: Issue, pullRequests: PullRequest, watchers: Watcher, licenseInfo: LicenseInfo? = nil) {
-        self.init(unsafeResultMap: ["__typename": "Repository", "id": id, "owner": owner.resultMap, "name": name, "description": description, "stargazers": stargazers.resultMap, "forkCount": forkCount, "viewerHasStarred": viewerHasStarred, "viewerSubscription": viewerSubscription, "issues": issues.resultMap, "pullRequests": pullRequests.resultMap, "watchers": watchers.resultMap, "licenseInfo": licenseInfo.flatMap { (value: LicenseInfo) -> ResultMap in value.resultMap }])
       }
 
       public var __typename: String {
@@ -385,132 +342,140 @@ public final class FetchRepositoryQuery: GraphQLQuery {
         }
       }
 
-      public var id: GraphQLID {
+      public var fragments: Fragments {
         get {
-          return resultMap["id"]! as! GraphQLID
+          return Fragments(unsafeResultMap: resultMap)
         }
         set {
-          resultMap.updateValue(newValue, forKey: "id")
+          resultMap += newValue.resultMap
         }
       }
 
-      /// The User owner of the repository.
-      public var owner: Owner {
+      public struct Fragments {
+        public private(set) var resultMap: ResultMap
+
+        public init(unsafeResultMap: ResultMap) {
+          self.resultMap = unsafeResultMap
+        }
+
+        public var repositoryDetailsFields: RepositoryDetailsFields {
+          get {
+            return RepositoryDetailsFields(unsafeResultMap: resultMap)
+          }
+          set {
+            resultMap += newValue.resultMap
+          }
+        }
+      }
+    }
+  }
+}
+
+public final class AddStarMutation: GraphQLMutation {
+  /// The raw GraphQL definition of this operation.
+  public let operationDefinition: String =
+    """
+    mutation AddStar($starrableID: String!) {
+      addStar(input: {starrableId: $starrableID}) {
+        __typename
+        starrable {
+          __typename
+          ... on Repository {
+            ...RepositoryDetailsFields
+          }
+        }
+      }
+    }
+    """
+
+  public let operationName: String = "AddStar"
+
+  public var queryDocument: String { return operationDefinition.appending(RepositoryDetailsFields.fragmentDefinition) }
+
+  public var starrableID: String
+
+  public init(starrableID: String) {
+    self.starrableID = starrableID
+  }
+
+  public var variables: GraphQLMap? {
+    return ["starrableID": starrableID]
+  }
+
+  public struct Data: GraphQLSelectionSet {
+    public static let possibleTypes: [String] = ["Mutation"]
+
+    public static let selections: [GraphQLSelection] = [
+      GraphQLField("addStar", arguments: ["input": ["starrableId": GraphQLVariable("starrableID")]], type: .object(AddStar.selections)),
+    ]
+
+    public private(set) var resultMap: ResultMap
+
+    public init(unsafeResultMap: ResultMap) {
+      self.resultMap = unsafeResultMap
+    }
+
+    public init(addStar: AddStar? = nil) {
+      self.init(unsafeResultMap: ["__typename": "Mutation", "addStar": addStar.flatMap { (value: AddStar) -> ResultMap in value.resultMap }])
+    }
+
+    /// Adds a star to a Starrable.
+    public var addStar: AddStar? {
+      get {
+        return (resultMap["addStar"] as? ResultMap).flatMap { AddStar(unsafeResultMap: $0) }
+      }
+      set {
+        resultMap.updateValue(newValue?.resultMap, forKey: "addStar")
+      }
+    }
+
+    public struct AddStar: GraphQLSelectionSet {
+      public static let possibleTypes: [String] = ["AddStarPayload"]
+
+      public static let selections: [GraphQLSelection] = [
+        GraphQLField("__typename", type: .nonNull(.scalar(String.self))),
+        GraphQLField("starrable", type: .object(Starrable.selections)),
+      ]
+
+      public private(set) var resultMap: ResultMap
+
+      public init(unsafeResultMap: ResultMap) {
+        self.resultMap = unsafeResultMap
+      }
+
+      public init(starrable: Starrable? = nil) {
+        self.init(unsafeResultMap: ["__typename": "AddStarPayload", "starrable": starrable.flatMap { (value: Starrable) -> ResultMap in value.resultMap }])
+      }
+
+      public var __typename: String {
         get {
-          return Owner(unsafeResultMap: resultMap["owner"]! as! ResultMap)
+          return resultMap["__typename"]! as! String
         }
         set {
-          resultMap.updateValue(newValue.resultMap, forKey: "owner")
+          resultMap.updateValue(newValue, forKey: "__typename")
         }
       }
 
-      /// The name of the repository.
-      public var name: String {
+      /// The starrable.
+      public var starrable: Starrable? {
         get {
-          return resultMap["name"]! as! String
+          return (resultMap["starrable"] as? ResultMap).flatMap { Starrable(unsafeResultMap: $0) }
         }
         set {
-          resultMap.updateValue(newValue, forKey: "name")
+          resultMap.updateValue(newValue?.resultMap, forKey: "starrable")
         }
       }
 
-      /// The description of the repository.
-      public var description: String? {
-        get {
-          return resultMap["description"] as? String
-        }
-        set {
-          resultMap.updateValue(newValue, forKey: "description")
-        }
-      }
-
-      /// A list of users who have starred this starrable.
-      public var stargazers: Stargazer {
-        get {
-          return Stargazer(unsafeResultMap: resultMap["stargazers"]! as! ResultMap)
-        }
-        set {
-          resultMap.updateValue(newValue.resultMap, forKey: "stargazers")
-        }
-      }
-
-      /// Returns how many forks there are of this repository in the whole network.
-      public var forkCount: Int {
-        get {
-          return resultMap["forkCount"]! as! Int
-        }
-        set {
-          resultMap.updateValue(newValue, forKey: "forkCount")
-        }
-      }
-
-      /// Returns a boolean indicating whether the viewing user has starred this starrable.
-      public var viewerHasStarred: Bool {
-        get {
-          return resultMap["viewerHasStarred"]! as! Bool
-        }
-        set {
-          resultMap.updateValue(newValue, forKey: "viewerHasStarred")
-        }
-      }
-
-      /// Identifies if the viewer is watching, not watching, or ignoring the subscribable entity.
-      public var viewerSubscription: SubscriptionState? {
-        get {
-          return resultMap["viewerSubscription"] as? SubscriptionState
-        }
-        set {
-          resultMap.updateValue(newValue, forKey: "viewerSubscription")
-        }
-      }
-
-      /// A list of issues that have been opened in the repository.
-      public var issues: Issue {
-        get {
-          return Issue(unsafeResultMap: resultMap["issues"]! as! ResultMap)
-        }
-        set {
-          resultMap.updateValue(newValue.resultMap, forKey: "issues")
-        }
-      }
-
-      /// A list of pull requests that have been opened in the repository.
-      public var pullRequests: PullRequest {
-        get {
-          return PullRequest(unsafeResultMap: resultMap["pullRequests"]! as! ResultMap)
-        }
-        set {
-          resultMap.updateValue(newValue.resultMap, forKey: "pullRequests")
-        }
-      }
-
-      /// A list of users watching the repository.
-      public var watchers: Watcher {
-        get {
-          return Watcher(unsafeResultMap: resultMap["watchers"]! as! ResultMap)
-        }
-        set {
-          resultMap.updateValue(newValue.resultMap, forKey: "watchers")
-        }
-      }
-
-      /// The license associated with the repository
-      public var licenseInfo: LicenseInfo? {
-        get {
-          return (resultMap["licenseInfo"] as? ResultMap).flatMap { LicenseInfo(unsafeResultMap: $0) }
-        }
-        set {
-          resultMap.updateValue(newValue?.resultMap, forKey: "licenseInfo")
-        }
-      }
-
-      public struct Owner: GraphQLSelectionSet {
-        public static let possibleTypes: [String] = ["Organization", "User"]
+      public struct Starrable: GraphQLSelectionSet {
+        public static let possibleTypes: [String] = ["Repository", "Topic", "Gist"]
 
         public static let selections: [GraphQLSelection] = [
-          GraphQLField("__typename", type: .nonNull(.scalar(String.self))),
-          GraphQLField("avatarUrl", type: .nonNull(.scalar(String.self))),
-          GraphQLField("login", type: .nonNull(.scalar(String.self))),
+          GraphQLTypeCase(
+            variants: ["Repository": AsRepository.selections],
+            default: [
+              GraphQLField("__typename", type: .nonNull(.scalar(String.self))),
+            ]
+          )
         ]
 
         public private(set) var resultMap: ResultMap
@@ -519,12 +484,12 @@ public final class FetchRepositoryQuery: GraphQLQuery {
           self.resultMap = unsafeResultMap
         }
 
-        public static func makeOrganization(avatarUrl: String, login: String) -> Owner {
-          return Owner(unsafeResultMap: ["__typename": "Organization", "avatarUrl": avatarUrl, "login": login])
+        public static func makeTopic() -> Starrable {
+          return Starrable(unsafeResultMap: ["__typename": "Topic"])
         }
 
-        public static func makeUser(avatarUrl: String, login: String) -> Owner {
-          return Owner(unsafeResultMap: ["__typename": "User", "avatarUrl": avatarUrl, "login": login])
+        public static func makeGist() -> Starrable {
+          return Starrable(unsafeResultMap: ["__typename": "Gist"])
         }
 
         public var __typename: String {
@@ -536,33 +501,176 @@ public final class FetchRepositoryQuery: GraphQLQuery {
           }
         }
 
-        /// A URL pointing to the owner's public avatar.
-        public var avatarUrl: String {
+        public var asRepository: AsRepository? {
           get {
-            return resultMap["avatarUrl"]! as! String
+            if !AsRepository.possibleTypes.contains(__typename) { return nil }
+            return AsRepository(unsafeResultMap: resultMap)
           }
           set {
-            resultMap.updateValue(newValue, forKey: "avatarUrl")
+            guard let newValue = newValue else { return }
+            resultMap = newValue.resultMap
           }
         }
 
-        /// The username used to login.
-        public var login: String {
-          get {
-            return resultMap["login"]! as! String
+        public struct AsRepository: GraphQLSelectionSet {
+          public static let possibleTypes: [String] = ["Repository"]
+
+          public static let selections: [GraphQLSelection] = [
+            GraphQLField("__typename", type: .nonNull(.scalar(String.self))),
+            GraphQLFragmentSpread(RepositoryDetailsFields.self),
+          ]
+
+          public private(set) var resultMap: ResultMap
+
+          public init(unsafeResultMap: ResultMap) {
+            self.resultMap = unsafeResultMap
           }
-          set {
-            resultMap.updateValue(newValue, forKey: "login")
+
+          public var __typename: String {
+            get {
+              return resultMap["__typename"]! as! String
+            }
+            set {
+              resultMap.updateValue(newValue, forKey: "__typename")
+            }
+          }
+
+          public var fragments: Fragments {
+            get {
+              return Fragments(unsafeResultMap: resultMap)
+            }
+            set {
+              resultMap += newValue.resultMap
+            }
+          }
+
+          public struct Fragments {
+            public private(set) var resultMap: ResultMap
+
+            public init(unsafeResultMap: ResultMap) {
+              self.resultMap = unsafeResultMap
+            }
+
+            public var repositoryDetailsFields: RepositoryDetailsFields {
+              get {
+                return RepositoryDetailsFields(unsafeResultMap: resultMap)
+              }
+              set {
+                resultMap += newValue.resultMap
+              }
+            }
           }
         }
       }
+    }
+  }
+}
 
-      public struct Stargazer: GraphQLSelectionSet {
-        public static let possibleTypes: [String] = ["StargazerConnection"]
+public final class RemoveStarMutation: GraphQLMutation {
+  /// The raw GraphQL definition of this operation.
+  public let operationDefinition: String =
+    """
+    mutation RemoveStar($starrableID: String!) {
+      removeStar(input: {starrableId: $starrableID}) {
+        __typename
+        starrable {
+          __typename
+          ... on Repository {
+            ...RepositoryDetailsFields
+          }
+        }
+      }
+    }
+    """
+
+  public let operationName: String = "RemoveStar"
+
+  public var queryDocument: String { return operationDefinition.appending(RepositoryDetailsFields.fragmentDefinition) }
+
+  public var starrableID: String
+
+  public init(starrableID: String) {
+    self.starrableID = starrableID
+  }
+
+  public var variables: GraphQLMap? {
+    return ["starrableID": starrableID]
+  }
+
+  public struct Data: GraphQLSelectionSet {
+    public static let possibleTypes: [String] = ["Mutation"]
+
+    public static let selections: [GraphQLSelection] = [
+      GraphQLField("removeStar", arguments: ["input": ["starrableId": GraphQLVariable("starrableID")]], type: .object(RemoveStar.selections)),
+    ]
+
+    public private(set) var resultMap: ResultMap
+
+    public init(unsafeResultMap: ResultMap) {
+      self.resultMap = unsafeResultMap
+    }
+
+    public init(removeStar: RemoveStar? = nil) {
+      self.init(unsafeResultMap: ["__typename": "Mutation", "removeStar": removeStar.flatMap { (value: RemoveStar) -> ResultMap in value.resultMap }])
+    }
+
+    /// Removes a star from a Starrable.
+    public var removeStar: RemoveStar? {
+      get {
+        return (resultMap["removeStar"] as? ResultMap).flatMap { RemoveStar(unsafeResultMap: $0) }
+      }
+      set {
+        resultMap.updateValue(newValue?.resultMap, forKey: "removeStar")
+      }
+    }
+
+    public struct RemoveStar: GraphQLSelectionSet {
+      public static let possibleTypes: [String] = ["RemoveStarPayload"]
+
+      public static let selections: [GraphQLSelection] = [
+        GraphQLField("__typename", type: .nonNull(.scalar(String.self))),
+        GraphQLField("starrable", type: .object(Starrable.selections)),
+      ]
+
+      public private(set) var resultMap: ResultMap
+
+      public init(unsafeResultMap: ResultMap) {
+        self.resultMap = unsafeResultMap
+      }
+
+      public init(starrable: Starrable? = nil) {
+        self.init(unsafeResultMap: ["__typename": "RemoveStarPayload", "starrable": starrable.flatMap { (value: Starrable) -> ResultMap in value.resultMap }])
+      }
+
+      public var __typename: String {
+        get {
+          return resultMap["__typename"]! as! String
+        }
+        set {
+          resultMap.updateValue(newValue, forKey: "__typename")
+        }
+      }
+
+      /// The starrable.
+      public var starrable: Starrable? {
+        get {
+          return (resultMap["starrable"] as? ResultMap).flatMap { Starrable(unsafeResultMap: $0) }
+        }
+        set {
+          resultMap.updateValue(newValue?.resultMap, forKey: "starrable")
+        }
+      }
+
+      public struct Starrable: GraphQLSelectionSet {
+        public static let possibleTypes: [String] = ["Repository", "Topic", "Gist"]
 
         public static let selections: [GraphQLSelection] = [
-          GraphQLField("__typename", type: .nonNull(.scalar(String.self))),
-          GraphQLField("totalCount", type: .nonNull(.scalar(Int.self))),
+          GraphQLTypeCase(
+            variants: ["Repository": AsRepository.selections],
+            default: [
+              GraphQLField("__typename", type: .nonNull(.scalar(String.self))),
+            ]
+          )
         ]
 
         public private(set) var resultMap: ResultMap
@@ -571,8 +679,12 @@ public final class FetchRepositoryQuery: GraphQLQuery {
           self.resultMap = unsafeResultMap
         }
 
-        public init(totalCount: Int) {
-          self.init(unsafeResultMap: ["__typename": "StargazerConnection", "totalCount": totalCount])
+        public static func makeTopic() -> Starrable {
+          return Starrable(unsafeResultMap: ["__typename": "Topic"])
+        }
+
+        public static func makeGist() -> Starrable {
+          return Starrable(unsafeResultMap: ["__typename": "Gist"])
         }
 
         public var __typename: String {
@@ -584,165 +696,64 @@ public final class FetchRepositoryQuery: GraphQLQuery {
           }
         }
 
-        /// Identifies the total count of items in the connection.
-        public var totalCount: Int {
+        public var asRepository: AsRepository? {
           get {
-            return resultMap["totalCount"]! as! Int
+            if !AsRepository.possibleTypes.contains(__typename) { return nil }
+            return AsRepository(unsafeResultMap: resultMap)
           }
           set {
-            resultMap.updateValue(newValue, forKey: "totalCount")
-          }
-        }
-      }
-
-      public struct Issue: GraphQLSelectionSet {
-        public static let possibleTypes: [String] = ["IssueConnection"]
-
-        public static let selections: [GraphQLSelection] = [
-          GraphQLField("__typename", type: .nonNull(.scalar(String.self))),
-          GraphQLField("totalCount", type: .nonNull(.scalar(Int.self))),
-        ]
-
-        public private(set) var resultMap: ResultMap
-
-        public init(unsafeResultMap: ResultMap) {
-          self.resultMap = unsafeResultMap
-        }
-
-        public init(totalCount: Int) {
-          self.init(unsafeResultMap: ["__typename": "IssueConnection", "totalCount": totalCount])
-        }
-
-        public var __typename: String {
-          get {
-            return resultMap["__typename"]! as! String
-          }
-          set {
-            resultMap.updateValue(newValue, forKey: "__typename")
+            guard let newValue = newValue else { return }
+            resultMap = newValue.resultMap
           }
         }
 
-        /// Identifies the total count of items in the connection.
-        public var totalCount: Int {
-          get {
-            return resultMap["totalCount"]! as! Int
+        public struct AsRepository: GraphQLSelectionSet {
+          public static let possibleTypes: [String] = ["Repository"]
+
+          public static let selections: [GraphQLSelection] = [
+            GraphQLField("__typename", type: .nonNull(.scalar(String.self))),
+            GraphQLFragmentSpread(RepositoryDetailsFields.self),
+          ]
+
+          public private(set) var resultMap: ResultMap
+
+          public init(unsafeResultMap: ResultMap) {
+            self.resultMap = unsafeResultMap
           }
-          set {
-            resultMap.updateValue(newValue, forKey: "totalCount")
+
+          public var __typename: String {
+            get {
+              return resultMap["__typename"]! as! String
+            }
+            set {
+              resultMap.updateValue(newValue, forKey: "__typename")
+            }
           }
-        }
-      }
 
-      public struct PullRequest: GraphQLSelectionSet {
-        public static let possibleTypes: [String] = ["PullRequestConnection"]
-
-        public static let selections: [GraphQLSelection] = [
-          GraphQLField("__typename", type: .nonNull(.scalar(String.self))),
-          GraphQLField("totalCount", type: .nonNull(.scalar(Int.self))),
-        ]
-
-        public private(set) var resultMap: ResultMap
-
-        public init(unsafeResultMap: ResultMap) {
-          self.resultMap = unsafeResultMap
-        }
-
-        public init(totalCount: Int) {
-          self.init(unsafeResultMap: ["__typename": "PullRequestConnection", "totalCount": totalCount])
-        }
-
-        public var __typename: String {
-          get {
-            return resultMap["__typename"]! as! String
+          public var fragments: Fragments {
+            get {
+              return Fragments(unsafeResultMap: resultMap)
+            }
+            set {
+              resultMap += newValue.resultMap
+            }
           }
-          set {
-            resultMap.updateValue(newValue, forKey: "__typename")
-          }
-        }
 
-        /// Identifies the total count of items in the connection.
-        public var totalCount: Int {
-          get {
-            return resultMap["totalCount"]! as! Int
-          }
-          set {
-            resultMap.updateValue(newValue, forKey: "totalCount")
-          }
-        }
-      }
+          public struct Fragments {
+            public private(set) var resultMap: ResultMap
 
-      public struct Watcher: GraphQLSelectionSet {
-        public static let possibleTypes: [String] = ["UserConnection"]
+            public init(unsafeResultMap: ResultMap) {
+              self.resultMap = unsafeResultMap
+            }
 
-        public static let selections: [GraphQLSelection] = [
-          GraphQLField("__typename", type: .nonNull(.scalar(String.self))),
-          GraphQLField("totalCount", type: .nonNull(.scalar(Int.self))),
-        ]
-
-        public private(set) var resultMap: ResultMap
-
-        public init(unsafeResultMap: ResultMap) {
-          self.resultMap = unsafeResultMap
-        }
-
-        public init(totalCount: Int) {
-          self.init(unsafeResultMap: ["__typename": "UserConnection", "totalCount": totalCount])
-        }
-
-        public var __typename: String {
-          get {
-            return resultMap["__typename"]! as! String
-          }
-          set {
-            resultMap.updateValue(newValue, forKey: "__typename")
-          }
-        }
-
-        /// Identifies the total count of items in the connection.
-        public var totalCount: Int {
-          get {
-            return resultMap["totalCount"]! as! Int
-          }
-          set {
-            resultMap.updateValue(newValue, forKey: "totalCount")
-          }
-        }
-      }
-
-      public struct LicenseInfo: GraphQLSelectionSet {
-        public static let possibleTypes: [String] = ["License"]
-
-        public static let selections: [GraphQLSelection] = [
-          GraphQLField("__typename", type: .nonNull(.scalar(String.self))),
-          GraphQLField("name", type: .nonNull(.scalar(String.self))),
-        ]
-
-        public private(set) var resultMap: ResultMap
-
-        public init(unsafeResultMap: ResultMap) {
-          self.resultMap = unsafeResultMap
-        }
-
-        public init(name: String) {
-          self.init(unsafeResultMap: ["__typename": "License", "name": name])
-        }
-
-        public var __typename: String {
-          get {
-            return resultMap["__typename"]! as! String
-          }
-          set {
-            resultMap.updateValue(newValue, forKey: "__typename")
-          }
-        }
-
-        /// The license full name specified by <https://spdx.org/licenses>
-        public var name: String {
-          get {
-            return resultMap["name"]! as! String
-          }
-          set {
-            resultMap.updateValue(newValue, forKey: "name")
+            public var repositoryDetailsFields: RepositoryDetailsFields {
+              get {
+                return RepositoryDetailsFields(unsafeResultMap: resultMap)
+              }
+              set {
+                resultMap += newValue.resultMap
+              }
+            }
           }
         }
       }
@@ -1002,6 +1013,446 @@ public struct RepositorySearchResult: GraphQLFragment {
       }
       set {
         resultMap.updateValue(newValue, forKey: "totalCount")
+      }
+    }
+  }
+}
+
+public struct RepositoryDetailsFields: GraphQLFragment {
+  /// The raw GraphQL definition of this fragment.
+  public static let fragmentDefinition: String =
+    """
+    fragment RepositoryDetailsFields on Repository {
+      __typename
+      id
+      owner {
+        __typename
+        avatarUrl
+        login
+      }
+      name
+      description
+      stargazers {
+        __typename
+        totalCount
+      }
+      forkCount
+      viewerHasStarred
+      viewerSubscription
+      issues {
+        __typename
+        totalCount
+      }
+      pullRequests {
+        __typename
+        totalCount
+      }
+      watchers {
+        __typename
+        totalCount
+      }
+      licenseInfo {
+        __typename
+        name
+      }
+    }
+    """
+
+  public static let possibleTypes: [String] = ["Repository"]
+
+  public static let selections: [GraphQLSelection] = [
+    GraphQLField("__typename", type: .nonNull(.scalar(String.self))),
+    GraphQLField("id", type: .nonNull(.scalar(GraphQLID.self))),
+    GraphQLField("owner", type: .nonNull(.object(Owner.selections))),
+    GraphQLField("name", type: .nonNull(.scalar(String.self))),
+    GraphQLField("description", type: .scalar(String.self)),
+    GraphQLField("stargazers", type: .nonNull(.object(Stargazer.selections))),
+    GraphQLField("forkCount", type: .nonNull(.scalar(Int.self))),
+    GraphQLField("viewerHasStarred", type: .nonNull(.scalar(Bool.self))),
+    GraphQLField("viewerSubscription", type: .scalar(SubscriptionState.self)),
+    GraphQLField("issues", type: .nonNull(.object(Issue.selections))),
+    GraphQLField("pullRequests", type: .nonNull(.object(PullRequest.selections))),
+    GraphQLField("watchers", type: .nonNull(.object(Watcher.selections))),
+    GraphQLField("licenseInfo", type: .object(LicenseInfo.selections)),
+  ]
+
+  public private(set) var resultMap: ResultMap
+
+  public init(unsafeResultMap: ResultMap) {
+    self.resultMap = unsafeResultMap
+  }
+
+  public init(id: GraphQLID, owner: Owner, name: String, description: String? = nil, stargazers: Stargazer, forkCount: Int, viewerHasStarred: Bool, viewerSubscription: SubscriptionState? = nil, issues: Issue, pullRequests: PullRequest, watchers: Watcher, licenseInfo: LicenseInfo? = nil) {
+    self.init(unsafeResultMap: ["__typename": "Repository", "id": id, "owner": owner.resultMap, "name": name, "description": description, "stargazers": stargazers.resultMap, "forkCount": forkCount, "viewerHasStarred": viewerHasStarred, "viewerSubscription": viewerSubscription, "issues": issues.resultMap, "pullRequests": pullRequests.resultMap, "watchers": watchers.resultMap, "licenseInfo": licenseInfo.flatMap { (value: LicenseInfo) -> ResultMap in value.resultMap }])
+  }
+
+  public var __typename: String {
+    get {
+      return resultMap["__typename"]! as! String
+    }
+    set {
+      resultMap.updateValue(newValue, forKey: "__typename")
+    }
+  }
+
+  public var id: GraphQLID {
+    get {
+      return resultMap["id"]! as! GraphQLID
+    }
+    set {
+      resultMap.updateValue(newValue, forKey: "id")
+    }
+  }
+
+  /// The User owner of the repository.
+  public var owner: Owner {
+    get {
+      return Owner(unsafeResultMap: resultMap["owner"]! as! ResultMap)
+    }
+    set {
+      resultMap.updateValue(newValue.resultMap, forKey: "owner")
+    }
+  }
+
+  /// The name of the repository.
+  public var name: String {
+    get {
+      return resultMap["name"]! as! String
+    }
+    set {
+      resultMap.updateValue(newValue, forKey: "name")
+    }
+  }
+
+  /// The description of the repository.
+  public var description: String? {
+    get {
+      return resultMap["description"] as? String
+    }
+    set {
+      resultMap.updateValue(newValue, forKey: "description")
+    }
+  }
+
+  /// A list of users who have starred this starrable.
+  public var stargazers: Stargazer {
+    get {
+      return Stargazer(unsafeResultMap: resultMap["stargazers"]! as! ResultMap)
+    }
+    set {
+      resultMap.updateValue(newValue.resultMap, forKey: "stargazers")
+    }
+  }
+
+  /// Returns how many forks there are of this repository in the whole network.
+  public var forkCount: Int {
+    get {
+      return resultMap["forkCount"]! as! Int
+    }
+    set {
+      resultMap.updateValue(newValue, forKey: "forkCount")
+    }
+  }
+
+  /// Returns a boolean indicating whether the viewing user has starred this starrable.
+  public var viewerHasStarred: Bool {
+    get {
+      return resultMap["viewerHasStarred"]! as! Bool
+    }
+    set {
+      resultMap.updateValue(newValue, forKey: "viewerHasStarred")
+    }
+  }
+
+  /// Identifies if the viewer is watching, not watching, or ignoring the subscribable entity.
+  public var viewerSubscription: SubscriptionState? {
+    get {
+      return resultMap["viewerSubscription"] as? SubscriptionState
+    }
+    set {
+      resultMap.updateValue(newValue, forKey: "viewerSubscription")
+    }
+  }
+
+  /// A list of issues that have been opened in the repository.
+  public var issues: Issue {
+    get {
+      return Issue(unsafeResultMap: resultMap["issues"]! as! ResultMap)
+    }
+    set {
+      resultMap.updateValue(newValue.resultMap, forKey: "issues")
+    }
+  }
+
+  /// A list of pull requests that have been opened in the repository.
+  public var pullRequests: PullRequest {
+    get {
+      return PullRequest(unsafeResultMap: resultMap["pullRequests"]! as! ResultMap)
+    }
+    set {
+      resultMap.updateValue(newValue.resultMap, forKey: "pullRequests")
+    }
+  }
+
+  /// A list of users watching the repository.
+  public var watchers: Watcher {
+    get {
+      return Watcher(unsafeResultMap: resultMap["watchers"]! as! ResultMap)
+    }
+    set {
+      resultMap.updateValue(newValue.resultMap, forKey: "watchers")
+    }
+  }
+
+  /// The license associated with the repository
+  public var licenseInfo: LicenseInfo? {
+    get {
+      return (resultMap["licenseInfo"] as? ResultMap).flatMap { LicenseInfo(unsafeResultMap: $0) }
+    }
+    set {
+      resultMap.updateValue(newValue?.resultMap, forKey: "licenseInfo")
+    }
+  }
+
+  public struct Owner: GraphQLSelectionSet {
+    public static let possibleTypes: [String] = ["Organization", "User"]
+
+    public static let selections: [GraphQLSelection] = [
+      GraphQLField("__typename", type: .nonNull(.scalar(String.self))),
+      GraphQLField("avatarUrl", type: .nonNull(.scalar(String.self))),
+      GraphQLField("login", type: .nonNull(.scalar(String.self))),
+    ]
+
+    public private(set) var resultMap: ResultMap
+
+    public init(unsafeResultMap: ResultMap) {
+      self.resultMap = unsafeResultMap
+    }
+
+    public static func makeOrganization(avatarUrl: String, login: String) -> Owner {
+      return Owner(unsafeResultMap: ["__typename": "Organization", "avatarUrl": avatarUrl, "login": login])
+    }
+
+    public static func makeUser(avatarUrl: String, login: String) -> Owner {
+      return Owner(unsafeResultMap: ["__typename": "User", "avatarUrl": avatarUrl, "login": login])
+    }
+
+    public var __typename: String {
+      get {
+        return resultMap["__typename"]! as! String
+      }
+      set {
+        resultMap.updateValue(newValue, forKey: "__typename")
+      }
+    }
+
+    /// A URL pointing to the owner's public avatar.
+    public var avatarUrl: String {
+      get {
+        return resultMap["avatarUrl"]! as! String
+      }
+      set {
+        resultMap.updateValue(newValue, forKey: "avatarUrl")
+      }
+    }
+
+    /// The username used to login.
+    public var login: String {
+      get {
+        return resultMap["login"]! as! String
+      }
+      set {
+        resultMap.updateValue(newValue, forKey: "login")
+      }
+    }
+  }
+
+  public struct Stargazer: GraphQLSelectionSet {
+    public static let possibleTypes: [String] = ["StargazerConnection"]
+
+    public static let selections: [GraphQLSelection] = [
+      GraphQLField("__typename", type: .nonNull(.scalar(String.self))),
+      GraphQLField("totalCount", type: .nonNull(.scalar(Int.self))),
+    ]
+
+    public private(set) var resultMap: ResultMap
+
+    public init(unsafeResultMap: ResultMap) {
+      self.resultMap = unsafeResultMap
+    }
+
+    public init(totalCount: Int) {
+      self.init(unsafeResultMap: ["__typename": "StargazerConnection", "totalCount": totalCount])
+    }
+
+    public var __typename: String {
+      get {
+        return resultMap["__typename"]! as! String
+      }
+      set {
+        resultMap.updateValue(newValue, forKey: "__typename")
+      }
+    }
+
+    /// Identifies the total count of items in the connection.
+    public var totalCount: Int {
+      get {
+        return resultMap["totalCount"]! as! Int
+      }
+      set {
+        resultMap.updateValue(newValue, forKey: "totalCount")
+      }
+    }
+  }
+
+  public struct Issue: GraphQLSelectionSet {
+    public static let possibleTypes: [String] = ["IssueConnection"]
+
+    public static let selections: [GraphQLSelection] = [
+      GraphQLField("__typename", type: .nonNull(.scalar(String.self))),
+      GraphQLField("totalCount", type: .nonNull(.scalar(Int.self))),
+    ]
+
+    public private(set) var resultMap: ResultMap
+
+    public init(unsafeResultMap: ResultMap) {
+      self.resultMap = unsafeResultMap
+    }
+
+    public init(totalCount: Int) {
+      self.init(unsafeResultMap: ["__typename": "IssueConnection", "totalCount": totalCount])
+    }
+
+    public var __typename: String {
+      get {
+        return resultMap["__typename"]! as! String
+      }
+      set {
+        resultMap.updateValue(newValue, forKey: "__typename")
+      }
+    }
+
+    /// Identifies the total count of items in the connection.
+    public var totalCount: Int {
+      get {
+        return resultMap["totalCount"]! as! Int
+      }
+      set {
+        resultMap.updateValue(newValue, forKey: "totalCount")
+      }
+    }
+  }
+
+  public struct PullRequest: GraphQLSelectionSet {
+    public static let possibleTypes: [String] = ["PullRequestConnection"]
+
+    public static let selections: [GraphQLSelection] = [
+      GraphQLField("__typename", type: .nonNull(.scalar(String.self))),
+      GraphQLField("totalCount", type: .nonNull(.scalar(Int.self))),
+    ]
+
+    public private(set) var resultMap: ResultMap
+
+    public init(unsafeResultMap: ResultMap) {
+      self.resultMap = unsafeResultMap
+    }
+
+    public init(totalCount: Int) {
+      self.init(unsafeResultMap: ["__typename": "PullRequestConnection", "totalCount": totalCount])
+    }
+
+    public var __typename: String {
+      get {
+        return resultMap["__typename"]! as! String
+      }
+      set {
+        resultMap.updateValue(newValue, forKey: "__typename")
+      }
+    }
+
+    /// Identifies the total count of items in the connection.
+    public var totalCount: Int {
+      get {
+        return resultMap["totalCount"]! as! Int
+      }
+      set {
+        resultMap.updateValue(newValue, forKey: "totalCount")
+      }
+    }
+  }
+
+  public struct Watcher: GraphQLSelectionSet {
+    public static let possibleTypes: [String] = ["UserConnection"]
+
+    public static let selections: [GraphQLSelection] = [
+      GraphQLField("__typename", type: .nonNull(.scalar(String.self))),
+      GraphQLField("totalCount", type: .nonNull(.scalar(Int.self))),
+    ]
+
+    public private(set) var resultMap: ResultMap
+
+    public init(unsafeResultMap: ResultMap) {
+      self.resultMap = unsafeResultMap
+    }
+
+    public init(totalCount: Int) {
+      self.init(unsafeResultMap: ["__typename": "UserConnection", "totalCount": totalCount])
+    }
+
+    public var __typename: String {
+      get {
+        return resultMap["__typename"]! as! String
+      }
+      set {
+        resultMap.updateValue(newValue, forKey: "__typename")
+      }
+    }
+
+    /// Identifies the total count of items in the connection.
+    public var totalCount: Int {
+      get {
+        return resultMap["totalCount"]! as! Int
+      }
+      set {
+        resultMap.updateValue(newValue, forKey: "totalCount")
+      }
+    }
+  }
+
+  public struct LicenseInfo: GraphQLSelectionSet {
+    public static let possibleTypes: [String] = ["License"]
+
+    public static let selections: [GraphQLSelection] = [
+      GraphQLField("__typename", type: .nonNull(.scalar(String.self))),
+      GraphQLField("name", type: .nonNull(.scalar(String.self))),
+    ]
+
+    public private(set) var resultMap: ResultMap
+
+    public init(unsafeResultMap: ResultMap) {
+      self.resultMap = unsafeResultMap
+    }
+
+    public init(name: String) {
+      self.init(unsafeResultMap: ["__typename": "License", "name": name])
+    }
+
+    public var __typename: String {
+      get {
+        return resultMap["__typename"]! as! String
+      }
+      set {
+        resultMap.updateValue(newValue, forKey: "__typename")
+      }
+    }
+
+    /// The license full name specified by <https://spdx.org/licenses>
+    public var name: String {
+      get {
+        return resultMap["name"]! as! String
+      }
+      set {
+        resultMap.updateValue(newValue, forKey: "name")
       }
     }
   }
