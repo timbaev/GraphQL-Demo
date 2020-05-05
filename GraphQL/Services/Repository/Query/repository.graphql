@@ -38,6 +38,19 @@ mutation RemoveStar($starrableID: String!) {
     }
 }
 
+mutation UpdateSubscription($subscribableID: String!, $state: SubscriptionState!) {
+    updateSubscription(input: {
+        subscribableId: $subscribableID,
+        state: $state
+    }) {
+        subscribable {
+            ... on Repository {
+                ... RepositoryDetailsFields
+            }
+        }
+    }
+}
+
 fragment RepositorySearchResult on Repository {
     id
     owner {

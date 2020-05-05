@@ -117,4 +117,28 @@ struct DefaultRepositoryService: RepositoryService {
             })
         })
     }
+
+    func updateSubscription(state: SubscriptionState, on repositoryID: String) -> Promise<Repository> {
+        let mutation = UpdateSubscriptionMutation(subscribableID: repositoryID, state: state)
+
+        return Promise(resolver: { seal in
+            self.webClient.perform(mutation: mutation, resultHandler: { result in
+                switch result {
+                case .success(let graphQLResult):
+                    guard let data = graphQLResult.data else {
+                        return seal.reject(WebError.badResponse)
+                    }
+
+                    guard let repository = data.updateSubscription?.subscribable?.asRepository?.fragments.repositoryDetailsFields else {
+                        return seal.reject(WebError.badResponse)
+                    }
+
+                    seal.fulfill(repository)
+
+                case .failure(let error):
+                    seal.reject(error)
+                }
+            })
+        })
+    }
 }

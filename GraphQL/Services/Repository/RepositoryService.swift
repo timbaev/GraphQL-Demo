@@ -18,4 +18,6 @@ protocol RepositoryService {
 
     func addStar(to repositoryID: String) -> Promise<Repository>
     func removeStar(from repositoryID: String) -> Promise<Repository>
+
+    func updateSubscription(state: SubscriptionState, on repositoryID: String) -> Promise<Repository>
 }

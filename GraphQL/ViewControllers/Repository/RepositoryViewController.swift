@@ -56,6 +56,21 @@ final class RepositoryViewController: LoggedViewController, EmptyStateViewable, 
 
     @IBAction private func onWatchButtonTouchUpInside(_ sender: Button) {
         Log.high("onWatchButtonTouchUpInside()", from: self)
+
+        guard let repository = self.repository else {
+            return
+        }
+
+        switch repository.viewerSubscription {
+        case .subscribed:
+            self.updateSubscription(state: .unsubscribed, on: repository.id)
+
+        case .unsubscribed, .ignored:
+            self.updateSubscription(state: .subscribed, on: repository.id)
+
+        default:
+            break
+        }
     }
 
     // MARK: -
@@ -102,6 +117,16 @@ final class RepositoryViewController: LoggedViewController, EmptyStateViewable, 
     private func removeStar(from repositoryID: String) {
         firstly {
             Dependencies.repositoryService.removeStar(from: repositoryID)
+        }.done { repository in
+            self.apply(repository: repository)
+        }.catch { error in
+            self.showMessage(withError: error)
+        }
+    }
+
+    private func updateSubscription(state: SubscriptionState, on repositoryID: String) {
+        firstly {
+            Dependencies.repositoryService.updateSubscription(state: state, on: repositoryID)
         }.done { repository in
             self.apply(repository: repository)
         }.catch { error in

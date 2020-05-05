@@ -761,6 +761,215 @@ public final class RemoveStarMutation: GraphQLMutation {
   }
 }
 
+public final class UpdateSubscriptionMutation: GraphQLMutation {
+  /// The raw GraphQL definition of this operation.
+  public let operationDefinition: String =
+    """
+    mutation UpdateSubscription($subscribableID: String!, $state: SubscriptionState!) {
+      updateSubscription(input: {subscribableId: $subscribableID, state: $state}) {
+        __typename
+        subscribable {
+          __typename
+          ... on Repository {
+            ...RepositoryDetailsFields
+          }
+        }
+      }
+    }
+    """
+
+  public let operationName: String = "UpdateSubscription"
+
+  public var queryDocument: String { return operationDefinition.appending(RepositoryDetailsFields.fragmentDefinition) }
+
+  public var subscribableID: String
+  public var state: SubscriptionState
+
+  public init(subscribableID: String, state: SubscriptionState) {
+    self.subscribableID = subscribableID
+    self.state = state
+  }
+
+  public var variables: GraphQLMap? {
+    return ["subscribableID": subscribableID, "state": state]
+  }
+
+  public struct Data: GraphQLSelectionSet {
+    public static let possibleTypes: [String] = ["Mutation"]
+
+    public static let selections: [GraphQLSelection] = [
+      GraphQLField("updateSubscription", arguments: ["input": ["subscribableId": GraphQLVariable("subscribableID"), "state": GraphQLVariable("state")]], type: .object(UpdateSubscription.selections)),
+    ]
+
+    public private(set) var resultMap: ResultMap
+
+    public init(unsafeResultMap: ResultMap) {
+      self.resultMap = unsafeResultMap
+    }
+
+    public init(updateSubscription: UpdateSubscription? = nil) {
+      self.init(unsafeResultMap: ["__typename": "Mutation", "updateSubscription": updateSubscription.flatMap { (value: UpdateSubscription) -> ResultMap in value.resultMap }])
+    }
+
+    /// Updates the state for subscribable subjects.
+    public var updateSubscription: UpdateSubscription? {
+      get {
+        return (resultMap["updateSubscription"] as? ResultMap).flatMap { UpdateSubscription(unsafeResultMap: $0) }
+      }
+      set {
+        resultMap.updateValue(newValue?.resultMap, forKey: "updateSubscription")
+      }
+    }
+
+    public struct UpdateSubscription: GraphQLSelectionSet {
+      public static let possibleTypes: [String] = ["UpdateSubscriptionPayload"]
+
+      public static let selections: [GraphQLSelection] = [
+        GraphQLField("__typename", type: .nonNull(.scalar(String.self))),
+        GraphQLField("subscribable", type: .object(Subscribable.selections)),
+      ]
+
+      public private(set) var resultMap: ResultMap
+
+      public init(unsafeResultMap: ResultMap) {
+        self.resultMap = unsafeResultMap
+      }
+
+      public init(subscribable: Subscribable? = nil) {
+        self.init(unsafeResultMap: ["__typename": "UpdateSubscriptionPayload", "subscribable": subscribable.flatMap { (value: Subscribable) -> ResultMap in value.resultMap }])
+      }
+
+      public var __typename: String {
+        get {
+          return resultMap["__typename"]! as! String
+        }
+        set {
+          resultMap.updateValue(newValue, forKey: "__typename")
+        }
+      }
+
+      /// The input subscribable entity.
+      public var subscribable: Subscribable? {
+        get {
+          return (resultMap["subscribable"] as? ResultMap).flatMap { Subscribable(unsafeResultMap: $0) }
+        }
+        set {
+          resultMap.updateValue(newValue?.resultMap, forKey: "subscribable")
+        }
+      }
+
+      public struct Subscribable: GraphQLSelectionSet {
+        public static let possibleTypes: [String] = ["Issue", "PullRequest", "Repository", "Team", "TeamDiscussion", "Commit"]
+
+        public static let selections: [GraphQLSelection] = [
+          GraphQLTypeCase(
+            variants: ["Repository": AsRepository.selections],
+            default: [
+              GraphQLField("__typename", type: .nonNull(.scalar(String.self))),
+            ]
+          )
+        ]
+
+        public private(set) var resultMap: ResultMap
+
+        public init(unsafeResultMap: ResultMap) {
+          self.resultMap = unsafeResultMap
+        }
+
+        public static func makeIssue() -> Subscribable {
+          return Subscribable(unsafeResultMap: ["__typename": "Issue"])
+        }
+
+        public static func makePullRequest() -> Subscribable {
+          return Subscribable(unsafeResultMap: ["__typename": "PullRequest"])
+        }
+
+        public static func makeTeam() -> Subscribable {
+          return Subscribable(unsafeResultMap: ["__typename": "Team"])
+        }
+
+        public static func makeTeamDiscussion() -> Subscribable {
+          return Subscribable(unsafeResultMap: ["__typename": "TeamDiscussion"])
+        }
+
+        public static func makeCommit() -> Subscribable {
+          return Subscribable(unsafeResultMap: ["__typename": "Commit"])
+        }
+
+        public var __typename: String {
+          get {
+            return resultMap["__typename"]! as! String
+          }
+          set {
+            resultMap.updateValue(newValue, forKey: "__typename")
+          }
+        }
+
+        public var asRepository: AsRepository? {
+          get {
+            if !AsRepository.possibleTypes.contains(__typename) { return nil }
+            return AsRepository(unsafeResultMap: resultMap)
+          }
+          set {
+            guard let newValue = newValue else { return }
+            resultMap = newValue.resultMap
+          }
+        }
+
+        public struct AsRepository: GraphQLSelectionSet {
+          public static let possibleTypes: [String] = ["Repository"]
+
+          public static let selections: [GraphQLSelection] = [
+            GraphQLField("__typename", type: .nonNull(.scalar(String.self))),
+            GraphQLFragmentSpread(RepositoryDetailsFields.self),
+          ]
+
+          public private(set) var resultMap: ResultMap
+
+          public init(unsafeResultMap: ResultMap) {
+            self.resultMap = unsafeResultMap
+          }
+
+          public var __typename: String {
+            get {
+              return resultMap["__typename"]! as! String
+            }
+            set {
+              resultMap.updateValue(newValue, forKey: "__typename")
+            }
+          }
+
+          public var fragments: Fragments {
+            get {
+              return Fragments(unsafeResultMap: resultMap)
+            }
+            set {
+              resultMap += newValue.resultMap
+            }
+          }
+
+          public struct Fragments {
+            public private(set) var resultMap: ResultMap
+
+            public init(unsafeResultMap: ResultMap) {
+              self.resultMap = unsafeResultMap
+            }
+
+            public var repositoryDetailsFields: RepositoryDetailsFields {
+              get {
+                return RepositoryDetailsFields(unsafeResultMap: resultMap)
+              }
+              set {
+                resultMap += newValue.resultMap
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}
+
 public struct RepositorySearchResult: GraphQLFragment {
   /// The raw GraphQL definition of this fragment.
   public static let fragmentDefinition: String =
